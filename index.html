@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>0XDOG - Terminal Meme Protocol</title>
+    <link rel="icon" type="image/jpeg" href="images/0xdog.jpg">
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #fff;
+            font-family: 'VT323', monospace;
+            overflow-x: hidden;
+        }
+
+        /* CRT scanline effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(0, 179, 108, 0.05) 1px, transparent 1px);
+            background-size: 100% 4px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        header {
+            position: fixed;
+            width: 100%;
+            z-index: 50;
+            padding: 20px 0;
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 2px solid #00B36C;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-img {
+            width: 50px;
+            height: 50px;
+            filter: drop-shadow(0 0 10px #00B36C);
+            animation: crt-flicker 0.1s infinite;
+        }
+
+        @keyframes crt-flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.95; }
+        }
+
+        nav a {
+            color: #00B36C;
+            font-size: 1.5em;
+            text-decoration: none;
+            margin: 0 15px;
+            text-shadow: 0 0 5px #00B36C;
+            transition: all 0.3s;
+        }
+
+        nav a:hover {
+            background: #00B36C;
+            color: #000;
+            padding: 5px 10px;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 1.8em;
+            cursor: pointer;
+            color: #00B36C;
+        }
+
+        #mobile-menu {
+            display: none;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            position: absolute;
+            top: 100%;
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #mobile-menu a {
+            margin: 10px 0;
+            font-size: 1.6em;
+            color: #00B36C;
+        }
+
+        .language-toggle {
+            color: #00B36C;
+            font-size: 1.2em;
+            cursor: pointer;
+            text-shadow: 0 0 5px #00B36C;
+            transition: all 0.3s;
+        }
+
+        .language-toggle:hover {
+            background: #00B36C;
+            color: #000;
+            padding: 5px 10px;
+        }
+
+        section {
+            padding: 80px 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1, h2 {
+            font-size: 2.5em;
+            text-align: center;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px #00B36C;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        p {
+            font-size: 1.3em;
+            line-height: 1.5;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 20px;
+            color: #fff;
+        }
+
+        .contract {
+            background: #1a1a1a;
+            padding: 10px;
+            font-size: 1.1em;
+            word-break: break-all;
+            text-align: center;
+            border: 1px dotted #00B36C;
+            margin: 20px auto;
+            max-width: 600px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .contract-short {
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        .gallery img {
+            width: 100%;
+            border: 1px solid #00B36C;
+            transition: all 0.3s;
+        }
+
+        .gallery img:hover {
+            box-shadow: 0 0 15px #00B36C;
+            transform: scale(1.05);
+        }
+
+        .links {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .links a {
+            display: inline-block;
+            color: #00B36C;
+            text-decoration: none;
+            font-size: 1.4em;
+            padding: 10px 20px;
+            border: 1px solid #00B36C;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+
+        .links a:hover {
+            background: #00B36C;
+            color: #000;
+            box-shadow: 0 0 10px #00B36C;
+        }
+
+        .input-group {
+            max-width: 600px;
+            margin: 20px auto;
+        }
+
+        input, button {
+            font-family: 'VT323', monospace;
+            font-size: 1.2em;
+            padding: 10px;
+            border: 1px solid #00B36C;
+            background: #1a1a1a;
+            color: #fff;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        button {
+            background: #00B36C;
+            color: #000;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #009955;
+            box-shadow: 0 0 10px #00B36C;
+        }
+
+        button:disabled {
+            background: #004d2e;
+            cursor: not-allowed;
+        }
+
+        .copy-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            font-size: 1em;
+            background: #1a1a1a;
+            border: 1px solid #00B36C;
+            color: #fff;
+        }
+
+        .copy-button:hover:not(:disabled) {
+            background: #009955;
+            color: #000;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2em;
+            background: #00B36C;
+            animation: blink 0.7s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            background: #000;
+            border-top: 2px solid #00B36C;
+            color: #fff;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                display: none;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            #mobile-menu.active {
+                display: flex;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .logo-img {
+                width: 40px;
+                height: 40px;
+            }
+
+            .language-toggle {
+                font-size: 1.4em;
+                margin-left: 10px;
+            }
+
+            .contract-short {
+                font-size: 0.9em;
+            }
+
+            .contract {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <header>
+        <div class="container nav-container">
+            <img src="images/0xdog.jpg" alt="0XDOG Logo" class="logo-img">
+            <nav>
+                <a href="#about" data-i18n="nav-about">About</a>
+                <a href="#trade" data-i18n="nav-trade">Trade</a>
+                <a href="#gallery" data-i18n="nav-gallery">Gallery</a>
+                <a href="#mint" data-i18n="nav-mint">Mint .okx</a>
+                <a href="#community" data-i18n="nav-community">Community</a>
+            </nav>
+            <div class="menu-toggle"><i class="fa fa-bars"></i></div>
+            <div class="language-toggle" id="languageToggle">EN</div>
+            <div id="mobile-menu">
+                <a href="#about" data-i18n="nav-about">About</a>
+                <a href="#trade" data-i18n="nav-trade">Trade</a>
+                <a href="#gallery" data-i18n="nav-gallery">Gallery</a>
+                <a href="#mint" data-i18n="nav-mint">Mint .okx</a>
+                <a href="#community" data-i18n="nav-community">Community</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="min-h-screen flex items-center justify-center" style="padding-top: 100px;">
+            <div class="container text-center">
+                <h1 data-i18n="hero-title">0XDOG: Meme Protocol Online<span class="cursor"></span></h1>
+                <p data-i18n="hero-text">Initializing... 0XDOG is the ultimate meme coin on XLAYER, paired with USDT0. A digital canine born in the green glow of the terminal, ready to dominate the crypto grid.</p>
+                <div class="links">
+                    <a href="#about" data-i18n="hero-learn-more">Learn More</a>
+                    <a href="#trade" data-i18n="hero-get-started">Get Started</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about">
+            <div class="container">
+                <h2 data-i18n="about-title">About 0XDOG</h2>
+                <p data-i18n="about-text">0XDOG emerged from the digital chaos of XLAYER, blending meme culture with blockchain grit. This canine-powered token is set to lead the pack, delivering fun and community-driven value. Join the revolution.</p>
+                <div class="contract">
+                    <span data-i18n="about-token-contract">Token Contract Address: </span>
+                    <span class="contract-short" data-full-address="0x33dc457b69a1e5daffac90013119982102051111">0x33dc...1111</span>
+                    <button class="copy-button" id="copyTokenAddressButton" title="Copy Token Contract Address"><i class="fa fa-copy"></i> <span data-i18n="copy">Copy</span></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gallery Section -->
+        <section id="gallery">
+            <div class="container">
+                <h2 data-i18n="gallery-title">Data Vault: Visual Feed</h2>
+                <div class="gallery">
+                    <img src="images/1.jpg" alt="0XDOG Visual 1">
+                    <img src="images/2.jpg" alt="0XDOG Visual 2">
+                    <img src="images/3.jpg" alt="0XDOG Visual 3">
+                </div>
+            </div>
+        </section>
+
+        <!-- Trade Section -->
+        <section id="trade">
+            <div class="container">
+                <h2 data-i18n="trade-title">Access Trade Terminal</h2>
+                <p data-i18n="trade-text">Connect to the XLAYER grid and trade 0XDOG. The system is live. Input your coordinates and execute.</p>
+                <div class="links">
+                    <a href="https://x.flap.sh/0x33dc457b69a1e5daffac90013119982102051111" target="_blank" data-i18n="trade-link">Trade on XLAYER</a>
+                    <a href="https://aveios.com/token/0x33dc457b69a1e5daffac90013119982102051111-xlayer?from=Home" target="_blank" data-i18n="stats-link">Stats on AVE</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mint Domain Section -->
+        <section id="mint">
+            <div class="container">
+                <h2 data-i18n="mint-title">Mint Your .okx Domain</h2>
+                <p data-i18n="mint-text">Create your unique .okx domain NFT on XLAYER.</p>
+                <div class="input-group">
+                    <button id="connectButton" data-i18n="connect-wallet">Connect Wallet</button>
+                    <p data-i18n="wallet-label">Wallet: <span id="walletAddress">Not connected</span></p>
+                    <p id="networkStatus" data-i18n="network-status">Click to connect...</p>
+                    <input type="text" id="domainId" placeholder="Enter domain ID (e.g., doge123)" oninput="convertToHex()">
+                    <div class="contract">
+                        <span data-i18n="hex-data-label">Hex Data: </span>
+                        <span id="hexOutputText" data-i18n="hex-placeholder">Enter a domain name to see the hex data</span>
+                        <button class="copy-button" id="copyHexButton" disabled><i class="fa fa-copy"></i> <span data-i18n="copy">Copy</span></button>
+                    </div>
+                    <div class="contract">
+                        <span data-i18n="contract-address-label">Contract Address: </span>
+                        <span id="contractAddress" class="contract-short" data-full-address="0xC3ad7bD7e434F4C1C023EbC6fe0AC4705e9518bC">0xC3ad...18bC</span>
+                        <button class="copy-button" id="copyAddressButton" title="Copy Contract Address"><i class="fa fa-copy"></i> <span data-i18n="copy">Copy</span></button>
+                    </div>
+                    <button id="mintDomain" data-i18n="mint-domain">Mint Domain NFT</button>
+                    <p id="mintStatus"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Community Section -->
+        <section id="community">
+            <div class="container">
+                <h2 data-i18n="community-title">Join the X</h2>
+                <p data-i18n="community-text">Sync with the 0XDOG network. Follow for updates, memes, and system alerts.</p>
+                <div class="links">
+                    <a href="https://x.com/0XDOG_USDT0" target="_blank" data-i18n="community-x-link">X Network</a>
+                    <a href="https://t.me/flap0xdogcto" target="_blank" data-i18n="community-telegram-link">Telegram Group</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p data-i18n="footer-text">&copy; 2025 0XDOG. All systems green. Stay in the loop.<span class="cursor"></span></p>
+    </footer>
+
+    <script>
+        // Language Translations
+        const translations = {
+            en: {
+                'nav-about': 'About',
+                'nav-trade': 'Trade',
+                'nav-gallery': 'Gallery',
+                'nav-mint': 'Mint .okx',
+                'nav-community': 'Community',
+                'hero-title': '0XDOG: Meme Protocol Online',
+                'hero-text': 'Initializing... 0XDOG is the ultimate meme coin on XLAYER, paired with USDT0. A digital canine born in the green glow of the terminal, ready to dominate the crypto grid.',
+                'hero-learn-more': 'Learn More',
+                'hero-get-started': 'Get Started',
+                'about-title': 'About 0XDOG',
+                'about-text': '0XDOG emerged from the digital chaos of XLAYER, blending meme culture with blockchain grit. This canine-powered token is set to lead the pack, delivering fun and community-driven value. Join the revolution.',
+                'about-token-contract': 'Token Contract Address: ',
+                'gallery-title': 'Data Vault: Visual Feed',
+                'trade-title': 'Access Trade Terminal',
+                'trade-text': 'Connect to the XLAYER grid and trade 0XDOG. The system is live. Input your coordinates and execute.',
+                'trade-link': 'Trade on XLAYER',
+                'stats-link': 'Stats on AVE',
+                'mint-title': 'Mint Your .okx Domain',
+                'mint-text': 'Create your unique .okx domain NFT on XLAYER.',
+                'connect-wallet': 'Connect Wallet',
+                'wallet-label': 'Wallet: ',
+                'network-status': 'Click to connect...',
+                'hex-data-label': 'Hex Data: ',
+                'hex-placeholder': 'Enter a domain name to see the hex data',
+                'contract-address-label': 'Contract Address: ',
+                'copy': 'Copy',
+                'mint-domain': 'Mint Domain NFT',
+                'community-title': 'Join the X',
+                'community-text': 'Sync with the 0XDOG network. Follow for updates, memes, and system alerts.',
+                'community-x-link': 'X Network',
+                'community-telegram-link': 'Telegram Group',
+                'footer-text': '© 2025 0XDOG. All systems green. Stay in the loop.'
+            },
+            zh: {
+                'nav-about': '关于',
+                'nav-trade': '交易',
+                'nav-gallery': '图库',
+                'nav-mint': '铸造 .okx',
+                'nav-community': '社区',
+                'hero-title': '0XDOG：迷因协议上线',
+                'hero-text': '初始化中... 0XDOG 是 XLAYER 上的终极迷因币，与 USDT0 配对。一只诞生于终端绿色光芒中的数字犬，准备称霸加密网格。',
+                'hero-learn-more': '了解更多',
+                'hero-get-started': '开始使用',
+                'about-title': '关于 0XDOG',
+                'about-text': '0XDOG 从 XLAYER 的数字混沌中诞生，融合了迷因文化与区块链的坚韧。这种狗狗驱动的代币将引领潮流，提供乐趣和社区驱动的价值。加入革命吧！',
+                'about-token-contract': '代币合约地址：',
+                'gallery-title': '数据宝库：视觉内容',
+                'trade-title': '访问交易终端',
+                'trade-text': '连接到 XLAYER 网格并交易 0XDOG。系统已上线。输入你的坐标并执行。',
+                'trade-link': '在 XLAYER 上交易',
+                'stats-link': '在 AVE 上的统计数据',
+                'mint-title': '铸造你的 .okx 域名',
+                'mint-text': '在 XLAYER 上创建你独特的 .okx 域名 NFT。',
+                'connect-wallet': '连接钱包',
+                'wallet-label': '钱包：',
+                'network-status': '点击连接...',
+                'hex-data-label': '十六进制数据：',
+                'hex-placeholder': '输入域名以查看十六进制数据',
+                'contract-address-label': '合约地址：',
+                'copy': '复制',
+                'mint-domain': '铸造域名 NFT',
+                'community-title': '加入 X 社区',
+                'community-text': '与 0XDOG 网络同步。关注以获取更新、迷因和系统警报。',
+                'community-x-link': 'X 网络',
+                'community-telegram-link': 'Telegram 群组',
+                'footer-text': '© 2025 0XDOG。所有系统正常。保持联系。'
+            }
+        };
+
+        // Language Switching Logic
+        function setLanguage(lang) {
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    if (key === 'about-token-contract') {
+                        element.innerHTML = `${translations[lang][key]} <span class="contract-short" data-full-address="0x33dc457b69a1e5daffac90013119982102051111">0x33dc...1111</span>`;
+                    } else if (key === 'contract-address-label') {
+                        element.innerHTML = `${translations[lang][key]} <span class="contract-short" data-full-address="0xC3ad7bD7e434F4C1C023EbC6fe0AC4705e9518bC">0xC3ad...18bC</span>`;
+                    } else if (element.id === 'walletAddress' && element.innerText !== 'Not connected' && element.innerText !== '未连接') {
+                        element.innerHTML = `${translations[lang]['wallet-label']} ${element.innerText.split(': ')[1] || element.innerText}`;
+                    } else if (element.id === 'networkStatus' && element.innerText !== translations.en['network-status'] && element.innerText !== translations.zh['network-status']) {
+                        element.innerHTML = element.innerText;
+                    } else if (element.id === 'hexOutputText' && element.innerText !== translations.en['hex-placeholder'] && element.innerText !== translations.zh['hex-placeholder']) {
+                        element.innerHTML = element.innerText;
+                    } else {
+                        element.innerHTML = translations[lang][key];
+                        if (element.tagName === 'INPUT') {
+                            element.placeholder = translations[lang][key];
+                        }
+                    }
+                }
+            });
+            // Update copy buttons
+            const copyButtons = document.querySelectorAll('.copy-button');
+            copyButtons.forEach(button => {
+                const copyText = button.querySelector('[data-i18n="copy"]');
+                if (copyText && !copyText.innerText.includes('Copied') && !copyText.innerText.includes('已复制')) {
+                    copyText.innerText = translations[lang]['copy'];
+                }
+            });
+            document.getElementById('languageToggle').textContent = lang === 'en' ? 'EN' : 'ZH';
+            localStorage.setItem('language', lang);
+            document.documentElement.lang = lang;
+        }
+
+        // Mobile Menu Toggle
+        function setupMobileMenu() {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (menuToggle && mobileMenu) {
+                menuToggle.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('active');
+                    menuToggle.innerHTML = mobileMenu.classList.contains('active') ? '<i class="fa fa-times"></i>' : '<i class="fa fa-bars"></i>';
+                });
+            }
+        }
+
+        // Smooth Scroll
+        function setupSmoothScroll() {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const mobileMenu = document.getElementById('mobile-menu');
+                    const menuToggle = document.querySelector('.menu-toggle');
+                    if (mobileMenu && menuToggle) {
+                        mobileMenu.classList.remove('active');
+                        menuToggle.innerHTML = '<i class="fa fa-bars"></i>';
+                    }
+                    document.querySelector(anchor.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+        }
+
+        // Web3 Domain Minting Logic
+        let web3, accounts, domainContract;
+        const contract = {
+            address: '0xC3ad7bD7e434F4C1C023EbC6fe0AC4705e9518bC',
+            suffix: 'okx',
+            protocol: 'okxname',
+            currency: 'ETH',
+            name: 'OKX Inscription Domain Name',
+            symbol: 'DOKX'
+        };
+
+        const domainContractABI = [
+            {"inputs":[{"internalType":"string","name":"_id","type":"string"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"minter","type":"address"},{"indexed":false,"internalType":"uint256","name":"tokenId","type":"uint256"},{"indexed":false,"internalType":"string","name":"id","type":"string"}],"name":"Minted","type":"event"},
+            {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenName","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"uint256","name":"index","type":"uint256"}],"name":"tokenOfOwnerByIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"SUFFIX","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"string","name":"","type":"string"}],"name":"idsMintedLower","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"ownerToTokenId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+        ];
+
+        const xLayer = { chainId: 196, name: 'X Layer mainnet', explorerUrl: 'https://www.okx.com/web3/explorer/xlayer', rpcUrl: 'https://rpc.xlayer.tech' };
+
+        async function connectWallet() {
+            const status = document.getElementById('networkStatus');
+            const currentLang = localStorage.getItem('language') || 'en';
+            if (!status) {
+                console.error('networkStatus element not found');
+                return;
+            }
+            try {
+                if (!window.ethereum) {
+                    status.innerHTML = currentLang === 'en' 
+                        ? 'No wallet detected. Please install <a href="https://metamask.io" target="_blank">MetaMask</a>.' 
+                        : '未检测到钱包。请安装 <a href="https://metamask.io" target="_blank">MetaMask</a>。';
+                    throw new Error("No wallet detected");
+                }
+                status.innerHTML = currentLang === 'en' ? 'Connecting...' : '正在连接...';
+                web3 = new Web3(window.ethereum);
+                accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                if (!accounts.length) throw new Error(currentLang === 'en' ? "Please unlock your wallet or connect it." : "请解锁您的钱包或连接它。");
+                const chainId = await web3.eth.getChainId();
+                if (chainId !== 196) {
+                    try {
+                        await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xc4' }] });
+                    } catch (switchError) {
+                        if (switchError.code === 4902) {
+                            await window.ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [{
+                                    chainId: '0xc4',
+                                    chainName: 'X Layer mainnet',
+                                    nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 },
+                                    rpcUrls: ['https://rpc.xlayer.tech'],
+                                    blockExplorerUrls: ['https://www.okx.com/web3/explorer/xlayer']
+                                }]
+                            });
+                        } else throw switchError;
+                    }
+                }
+                const walletAddress = document.getElementById('walletAddress');
+                if (walletAddress) {
+                    walletAddress.innerText = `${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`;
+                }
+                domainContract = new web3.eth.Contract(domainContractABI, contract.address);
+                status.innerHTML = currentLang === 'en' ? 'Connected to X Layer' : '已连接到 X Layer';
+            } catch (error) {
+                console.error(error);
+                status.innerHTML = currentLang === 'en' 
+                    ? `Failed to connect: ${error.message}` 
+                    : `连接失败：${error.message}`;
+            }
+        }
+
+        function isValidString(str) {
+            const strBytes = new TextEncoder().encode(str);
+            if (strBytes.length === 0 || strBytes.length > 15) return false;
+            for (let i = 0; i < strBytes.length; i++) {
+                const char = strBytes[i];
+                if (!(char >= 48 && char <= 57) && !(char >= 65 && char <= 90) && !(char >= 97 && char <= 122)) return false;
+            }
+            return true;
+        }
+
+        function convertToHex() {
+            const input = document.getElementById('domainId').value.trim();
+            const output = document.getElementById('hexOutputText');
+            const status = document.getElementById('mintStatus');
+            const copyHexButton = document.getElementById('copyHexButton');
+            const currentLang = localStorage.getItem('language') || 'en';
+
+            if (!input) {
+                output.textContent = translations[currentLang]['hex-placeholder'];
+                output.dataset.hex = '';
+                status.textContent = '';
+                copyHexButton.disabled = true;
+                return;
+            }
+
+            if (!isValidString(input)) {
+                output.textContent = currentLang === 'en' 
+                    ? 'Invalid input: Use letters and numbers only, 1-15 characters' 
+                    : '无效输入：仅使用字母和数字，1-15个字符';
+                output.dataset.hex = '';
+                status.textContent = currentLang === 'en' ? 'Invalid input' : '无效输入';
+                copyHexButton.disabled = true;
+                return;
+            }
+
+            const inscription = `data:,{"p":"${contract.protocol}","op":"reg","name":"${input}.${contract.suffix}"}`;
+            const hexData = '0x' + Array.from(new TextEncoder().encode(inscription)).map(byte => byte.toString(16).padStart(2, '0')).join('');
+            output.textContent = hexData;
+            output.dataset.hex = hexData;
+            status.textContent = currentLang === 'en' 
+                ? `Hex data for ${input}.${contract.suffix} generated` 
+                : `为 ${input}.${contract.suffix} 生成的十六进制数据`;
+            copyHexButton.disabled = false;
+        }
+
+        function copyToClipboard(type) {
+            const status = document.getElementById('mintStatus');
+            const currentLang = localStorage.getItem('language') || 'en';
+            let textToCopy, buttonElement;
+
+            if (type === 'hex') {
+                const sourceElement = document.getElementById('hexOutputText');
+                textToCopy = sourceElement.dataset.hex || '';
+                buttonElement = document.getElementById('copyHexButton');
+            } else if (type === 'address') {
+                const sourceElement = document.getElementById('contractAddress');
+                textToCopy = sourceElement.dataset.fullAddress;
+                buttonElement = document.getElementById('copyAddressButton');
+            } else if (type === 'token') {
+                const sourceElement = document.querySelector('#about .contract-short');
+                textToCopy = sourceElement.dataset.fullAddress;
+                buttonElement = document.getElementById('copyTokenAddressButton');
+            }
+
+            if (!textToCopy || textToCopy === translations[currentLang]['hex-placeholder'] || textToCopy === (currentLang === 'en' ? 'Invalid input: Use letters and numbers only, 1-15 characters' : '无效输入：仅使用字母和数字，1-15个字符')) {
+                status.textContent = currentLang === 'en' 
+                    ? `No valid ${type === 'hex' ? 'hex data' : type === 'address' ? 'contract address' : 'token address'} to copy` 
+                    : `没有有效的${type === 'hex' ? '十六进制数据' : type === 'address' ? '合约地址' : '代币地址'}可复制`;
+                return;
+            }
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                status.textContent = currentLang === 'en' 
+                    ? `Copied to clipboard` 
+                    : `已复制到剪切板`;
+                buttonElement.innerHTML = `<i class="fa fa-check"></i> ${currentLang === 'en' ? 'Copied!' : '已复制!'}`;
+                setTimeout(() => {
+                    status.textContent = '';
+                    buttonElement.innerHTML = `<i class="fa fa-copy"></i> ${translations[currentLang]['copy']}`;
+                }, 2000);
+            }).catch(error => {
+                console.error(`Copy ${type} failed:`, error);
+                status.textContent = currentLang === 'en' 
+                    ? `Failed to copy ${type === 'hex' ? 'hex data' : type === 'address' ? 'contract address' : 'token address'}. Select and copy manually.` 
+                    : `无法复制${type === 'hex' ? '十六进制数据' : type === 'address' ? '合约地址' : '代币地址'}。请手动选择并复制。`;
+            });
+        }
+
+        async function mintDomain() {
+            const section = document.getElementById('mint');
+            const status = document.getElementById('mintStatus');
+            const domainId = document.getElementById('domainId').value.trim();
+            const currentLang = localStorage.getItem('language') || 'en';
+            if (!domainId || domainId.length > 15 || !/^[a-zA-Z0-9]+$/.test(domainId)) {
+                status.innerText = currentLang === 'en' 
+                    ? 'Invalid Domain ID. Use 1-15 alphanumeric characters.' 
+                    : '无效的域名 ID。请使用 1-15 个字母数字字符。';
+                return;
+            }
+            if (!accounts) {
+                status.innerText = currentLang === 'en' 
+                    ? 'Please connect your wallet first!' 
+                    : '请先连接你的钱包！';
+                return;
+            }
+            try {
+                section.style.opacity = '0.7';
+                section.style.pointerEvents = 'none';
+                status.innerText = currentLang === 'en' ? 'Checking domain availability...' : '正在检查域名可用性...';
+                const domainIdLower = domainId.toLowerCase();
+                const isMinted = await domainContract.methods.idsMintedLower(domainIdLower).call();
+                if (isMinted) {
+                    status.innerText = currentLang === 'en' ? 'Domain ID already minted!' : '域名 ID 已被铸造！';
+                    return;
+                }
+                const hasMinted = await domainContract.methods.ownerToTokenId(accounts[0]).call();
+                if (hasMinted != 0) {
+                    status.innerText = currentLang === 'en' ? 'This address has already minted a domain!' : '此地址已铸造了一个域名！';
+                    return;
+                }
+                status.innerText = currentLang === 'en' ? 'Minting domain NFT...' : '正在铸造域名 NFT...';
+                const gas = await domainContract.methods.mint(domainId).estimateGas({ from: accounts[0] }).catch(() => 600000);
+                const tx = await domainContract.methods.mint(domainId).send({ 
+                    from: accounts[0], 
+                    gas: Math.floor(gas * 1.2),
+                    value: '0'
+                });
+                status.innerHTML = currentLang === 'en' 
+                    ? `Domain minted! Token ID: ${tx.events.Minted.returnValues.tokenId} (<a href="${xLayer.explorerUrl}/token/${contract.address}?a=${tx.events.Minted.returnValues.tokenId}" target="_blank">View on Explorer</a>)` 
+                    : `域名已铸造！代币 ID：${tx.events.Minted.returnValues.tokenId} (<a href="${xLayer.explorerUrl}/token/${contract.address}?a=${tx.events.Minted.returnValues.tokenId}" target="_blank">在浏览器上查看</a>)`;
+                document.getElementById('domainId').value = '';
+            } catch (error) {
+                console.error('Minting error:', error);
+                status.innerText = currentLang === 'en' 
+                    ? `Failed to mint domain: ${error.message.includes('revert') ? error.message.split('revert')[1]?.trim() || 'Unknown reason' : error.message}` 
+                    : `铸造域名失败：${error.message.includes('revert') ? error.message.split('revert')[1]?.trim() || '未知原因' : error.message}`;
+            } finally {
+                section.style.opacity = '1';
+                section.style.pointerEvents = 'auto';
+            }
+        }
+
+        // Initialize Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize language
+            const savedLang = localStorage.getItem('language') || 'en';
+            setLanguage(savedLang);
+            document.getElementById('languageToggle').addEventListener('click', () => {
+                const newLang = localStorage.getItem('language') === 'en' ? 'zh' : 'en';
+                setLanguage(newLang);
+            });
+
+            // Setup mobile menu and smooth scroll
+            setupMobileMenu();
+            setupSmoothScroll();
+
+            // Initialize Web3 elements
+            const copyHexButton = document.getElementById('copyHexButton');
+            const copyAddressButton = document.getElementById('copyAddressButton');
+            const copyTokenAddressButton = document.getElementById('copyTokenAddressButton');
+            const connectButton = document.getElementById('connectButton');
+            const mintDomainButton = document.getElementById('mintDomain');
+
+            if (copyHexButton) copyHexButton.disabled = true;
+            if (copyAddressButton) copyAddressButton.disabled = false;
+            if (copyTokenAddressButton) copyTokenAddressButton.disabled = false;
+
+            if (connectButton) connectButton.addEventListener('click', connectWallet);
+            if (mintDomainButton) mintDomainButton.addEventListener('click', mintDomain);
+            if (copyHexButton) copyHexButton.addEventListener('click', () => copyToClipboard('hex'));
+            if (copyAddressButton) copyAddressButton.addEventListener('click', () => copyToClipboard('address'));
+            if (copyTokenAddressButton) copyTokenAddressButton.addEventListener('click', () => copyToClipboard('token'));
+
+            // Check for MetaMask and local server
+            if (!window.location.protocol.startsWith('http')) {
+                const currentLang = localStorage.getItem('language') || 'en';
+                const networkStatus = document.getElementById('networkStatus');
+                if (networkStatus) {
+                    networkStatus.innerHTML = currentLang === 'en' 
+                        ? 'Please run this page via a local server (e.g., "npx serve") to connect MetaMask.' 
+                        : '请通过本地服务器运行此页面（例如，"npx serve"）以连接 MetaMask。';
+                }
+            } else if (!window.ethereum) {
+                const currentLang = localStorage.getItem('language') || 'en';
+                const networkStatus = document.getElementById('networkStatus');
+                if (networkStatus) {
+                    networkStatus.innerHTML = currentLang === 'en' 
+                        ? 'No wallet detected. Please install <a href="https://metamask.io">MetaMask</a>.' 
+                        : '未检测到钱包。请安装 <a href="https://metamask.io">MetaMask</a>。';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
